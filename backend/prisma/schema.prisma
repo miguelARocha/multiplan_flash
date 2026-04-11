@@ -11,14 +11,39 @@ enum UserRole {
   COMPRADOR
 }
 
+enum OfferStatus {
+  ATIVA
+  ENCERRADA
+}
+
 model User {
   id           String    @id @default(uuid())
   name         String
   email        String    @unique
   passwordHash String
   role         UserRole
+  offers       Offer[]
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   @@map("users")
+}
+
+model Offer {
+  id                 String      @id @default(uuid())
+  title              String
+  description        String
+  discountPercentage Int
+  stock              Int
+  expiresAt          DateTime
+  status             OfferStatus @default(ATIVA)
+  shopkeeperId       String
+  shopkeeper         User        @relation(fields: [shopkeeperId], references: [id], onDelete: Cascade)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  @@index([shopkeeperId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("offers")
 }
