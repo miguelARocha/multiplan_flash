@@ -7,17 +7,21 @@ import {
 } from '@nestjs/common';
 import { OfferStatus, Prisma } from '@prisma/client';
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { OffersGateway } from '../offers/offers.gateway';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class InterestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly offersGateway: OffersGateway,
+  ) {}
 
   async create(currentUser: AuthenticatedUser, offerId: string) {
     this.ensureBuyer(currentUser);
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const interest = await this.prisma.$transaction(async (tx) => {
         const stockReservation = await tx.offer.updateMany({
           where: {
             id: offerId,
@@ -50,6 +54,7 @@ export class InterestsService {
             offer: {
               select: {
                 id: true,
+                shopkeeperId: true,
                 title: true,
                 stock: true,
               },
@@ -57,6 +62,10 @@ export class InterestsService {
           },
         });
       });
+
+      this.offersGateway.notifyInterestCreated(interest);
+
+      return interest;
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
         throw new ConflictException('Interesse ja registrado para esta oferta.');

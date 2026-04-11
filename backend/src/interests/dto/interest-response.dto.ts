@@ -16,6 +16,9 @@ class InterestOfferDto {
   id: string;
 
   @ApiProperty()
+  shopkeeperId: string;
+
+  @ApiProperty()
   title: string;
 
   @ApiProperty()

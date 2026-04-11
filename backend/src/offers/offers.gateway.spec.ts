@@ -35,7 +35,7 @@ describe('OffersGateway', () => {
     expect(client.disconnect).not.toHaveBeenCalled();
   });
 
-  it('deve desconectar usuario que nao seja comprador', () => {
+  it('deve conectar lojista autenticado na propria sala', () => {
     const client = buildClient({ auth: { token: 'shopkeeper-token' } });
     jwtServiceMock.verify.mockReturnValue({
       sub: 'shopkeeper-1',
@@ -45,8 +45,8 @@ describe('OffersGateway', () => {
 
     offersGateway.handleConnection(client as never);
 
-    expect(client.join).not.toHaveBeenCalled();
-    expect(client.disconnect).toHaveBeenCalledWith(true);
+    expect(client.join).toHaveBeenCalledWith('shopkeeper:shopkeeper-1');
+    expect(client.disconnect).not.toHaveBeenCalled();
   });
 
   it('deve desconectar cliente com token invalido', () => {
@@ -71,6 +71,20 @@ describe('OffersGateway', () => {
 
     expect(serverMock.to).toHaveBeenCalledWith('buyers');
     expect(serverMock.emit).toHaveBeenCalledWith('offer.created', offer);
+  });
+
+  it('deve notificar lojista quando oferta receber interesse', () => {
+    const interest = {
+      id: 'interest-1',
+      offer: {
+        shopkeeperId: 'shopkeeper-1',
+      },
+    };
+
+    offersGateway.notifyInterestCreated(interest as never);
+
+    expect(serverMock.to).toHaveBeenCalledWith('shopkeeper:shopkeeper-1');
+    expect(serverMock.emit).toHaveBeenCalledWith('interest.created', interest);
   });
 
   function buildClient(handshake: {

@@ -8,9 +8,11 @@ import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '@prisma/client';
 import type { Server, Socket } from 'socket.io';
 import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import type { InterestResponseDto } from '../interests/dto/interest-response.dto';
 import type { OfferResponseDto } from './dto/offer-response.dto';
 
 const BUYERS_ROOM = 'buyers';
+const shopkeeperRoom = (shopkeeperId: string) => `shopkeeper:${shopkeeperId}`;
 
 @WebSocketGateway({
   namespace: 'offers',
@@ -28,16 +30,32 @@ export class OffersGateway implements OnGatewayConnection {
   handleConnection(@ConnectedSocket() client: Socket) {
     const currentUser = this.getUserFromHandshake(client);
 
-    if (currentUser?.role !== UserRole.COMPRADOR) {
+    if (!currentUser) {
       client.disconnect(true);
       return;
     }
 
-    void client.join(BUYERS_ROOM);
+    if (currentUser.role === UserRole.COMPRADOR) {
+      void client.join(BUYERS_ROOM);
+      return;
+    }
+
+    if (currentUser.role === UserRole.LOJISTA) {
+      void client.join(shopkeeperRoom(currentUser.sub));
+      return;
+    }
+
+    client.disconnect(true);
   }
 
   notifyOfferCreated(offer: OfferResponseDto) {
     this.server.to(BUYERS_ROOM).emit('offer.created', offer);
+  }
+
+  notifyInterestCreated(interest: InterestResponseDto) {
+    this.server
+      .to(shopkeeperRoom(interest.offer.shopkeeperId))
+      .emit('interest.created', interest);
   }
 
   private getUserFromHandshake(client: Socket): AuthenticatedUser | null {

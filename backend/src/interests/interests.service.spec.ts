@@ -35,6 +35,10 @@ describe('InterestsService', () => {
     $transaction: jest.fn(),
   };
 
+  const offersGatewayMock = {
+    notifyInterestCreated: jest.fn(),
+  };
+
   let interestsService: InterestsService;
 
   beforeEach(() => {
@@ -42,17 +46,25 @@ describe('InterestsService', () => {
     txMock.offer.findUnique.mockReset();
     txMock.interest.create.mockReset();
     prismaMock.$transaction.mockReset();
+    offersGatewayMock.notifyInterestCreated.mockReset();
     prismaMock.$transaction.mockImplementation((callback) => callback(txMock));
-    interestsService = new InterestsService(prismaMock as never);
+    interestsService = new InterestsService(
+      prismaMock as never,
+      offersGatewayMock as never,
+    );
   });
 
   it('deve registrar interesse e decrementar estoque na mesma transacao', async () => {
     txMock.offer.updateMany.mockResolvedValue({ count: 1 });
-    txMock.interest.create.mockResolvedValue({
+    const createdInterest = {
       id: 'interest-1',
       buyerId: 'buyer-1',
       offerId: 'offer-1',
-    });
+      offer: {
+        shopkeeperId: 'shopkeeper-1',
+      },
+    };
+    txMock.interest.create.mockResolvedValue(createdInterest);
 
     await interestsService.create(buyerUser, 'offer-1');
 
@@ -74,7 +86,20 @@ describe('InterestsService', () => {
           buyerId: 'buyer-1',
           offerId: 'offer-1',
         },
+        include: expect.objectContaining({
+          offer: {
+            select: {
+              id: true,
+              shopkeeperId: true,
+              title: true,
+              stock: true,
+            },
+          },
+        }),
       }),
+    );
+    expect(offersGatewayMock.notifyInterestCreated).toHaveBeenCalledWith(
+      createdInterest,
     );
   });
 
@@ -83,6 +108,7 @@ describe('InterestsService', () => {
       interestsService.create(shopkeeperUser, 'offer-1'),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
+    expect(offersGatewayMock.notifyInterestCreated).not.toHaveBeenCalled();
   });
 
   it('deve falhar quando oferta nao existir', async () => {
