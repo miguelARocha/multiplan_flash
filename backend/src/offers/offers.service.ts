@@ -102,6 +102,36 @@ export class OffersService {
     });
   }
 
+  async listMine(currentUser: AuthenticatedUser) {
+    this.ensureShopkeeper(currentUser);
+
+    const offers = await this.prisma.offer.findMany({
+      where: {
+        shopkeeperId: currentUser.sub,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      include: {
+        shopkeeper: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            interests: true,
+          },
+        },
+      },
+    });
+
+    return offers.map(({ _count, ...offer }) => ({
+      ...offer,
+      interestedCount: _count.interests,
+    }));
+  }
+
   private ensureShopkeeper(currentUser: AuthenticatedUser) {
     if (currentUser.role !== 'LOJISTA') {
       throw new ForbiddenException(

@@ -138,4 +138,44 @@ describe('OffersService', () => {
       }),
     );
   });
+
+  it('deve listar ofertas do lojista com quantidade de interessados', async () => {
+    prismaMock.offer.findMany.mockResolvedValue([
+      {
+        id: 'offer-1',
+        shopkeeperId: 'shopkeeper-1',
+        _count: {
+          interests: 2,
+        },
+      },
+    ]);
+
+    const offers = await offersService.listMine(shopkeeperUser);
+
+    expect(prismaMock.offer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { shopkeeperId: 'shopkeeper-1' },
+        include: expect.objectContaining({
+          _count: {
+            select: {
+              interests: true,
+            },
+          },
+        }),
+      }),
+    );
+    expect(offers).toEqual([
+      {
+        id: 'offer-1',
+        shopkeeperId: 'shopkeeper-1',
+        interestedCount: 2,
+      },
+    ]);
+  });
+
+  it('deve impedir comprador de listar ofertas como lojista', async () => {
+    await expect(offersService.listMine(buyerUser)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
 });

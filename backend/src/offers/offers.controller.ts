@@ -22,6 +22,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { ListOffersQueryDto } from './dto/list-offers-query.dto';
 import { OfferResponseDto } from './dto/offer-response.dto';
+import { ShopkeeperOfferResponseDto } from './dto/shopkeeper-offer-response.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { OffersService } from './offers.service';
 
@@ -41,6 +42,18 @@ export class OffersController {
     @Body() createOfferDto: CreateOfferDto,
   ) {
     return this.offersService.create(currentUser, createOfferDto);
+  }
+
+  @Get('mine')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lista ofertas do lojista autenticado com quantidade de interessados',
+  })
+  @ApiOkResponse({ type: ShopkeeperOfferResponseDto, isArray: true })
+  listMine(@CurrentUser() currentUser: AuthenticatedUser) {
+    return this.offersService.listMine(currentUser);
   }
 
   @Patch(':id')
