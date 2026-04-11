@@ -9,6 +9,7 @@ jest.mock('../src/prisma/prisma.service', () => ({
 }));
 
 import { AuthController } from '../src/auth/auth.controller';
+import type { AuthenticatedUser } from '../src/auth/authenticated-user.interface';
 import { AuthService } from '../src/auth/auth.service';
 import { PasswordService } from '../src/auth/password.service';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -143,5 +144,15 @@ describe('Fluxo de autenticacao', () => {
     ).rejects.toMatchObject({
       status: 401,
     });
+  });
+
+  it('deve retornar o usuario autenticado no endpoint me', () => {
+    const authenticatedUser: AuthenticatedUser = {
+      sub: 'user-123',
+      email: 'lojista@empresa.com',
+      role: UserRole.LOJISTA,
+    };
+
+    expect(authController.me(authenticatedUser)).toEqual(authenticatedUser);
   });
 });
