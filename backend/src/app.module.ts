@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { OffersModule } from './offers/offers.module';
+import { InterestsModule } from './interests/interests.module';
 import { SeedModule } from './seed/seed.module';
 
 @Module({
@@ -13,6 +14,7 @@ import { SeedModule } from './seed/seed.module';
     PrismaModule,
     AuthModule,
     OffersModule,
+    InterestsModule,
     SeedModule,
   ],
   controllers: [AppController],
