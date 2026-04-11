@@ -1,0 +1,42 @@
+services:
+  banco:
+    image: postgres:16-alpine
+    container_name: desafio_multiplan_banco
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: multiplan_flash
+      POSTGRES_USER: multiplan_admin
+      POSTGRES_PASSWORD: mult!pl4n@321
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U multiplan_admin -d multiplan_flash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: desafio_multiplan_backend
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      BANCO_HOST: banco
+      BANCO_PORTA: 5432
+      BANCO_NOME: multiplan_flash
+      BANCO_USUARIO: multiplan_admin
+      BANCO_SENHA: mult!pl4n@321
+      DATABASE_URL: postgresql://multiplan_admin:mult%21pl4n%40321@banco:5432/multiplan_flash?schema=public
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
