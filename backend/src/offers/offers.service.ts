@@ -9,15 +9,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { ListOffersQueryDto } from './dto/list-offers-query.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
+import { OffersGateway } from './offers.gateway';
 
 @Injectable()
 export class OffersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly offersGateway: OffersGateway,
+  ) {}
 
   async create(currentUser: AuthenticatedUser, createOfferDto: CreateOfferDto) {
     this.ensureShopkeeper(currentUser);
 
-    return this.prisma.offer.create({
+    const offer = await this.prisma.offer.create({
       data: {
         title: createOfferDto.title.trim(),
         description: createOfferDto.description.trim(),
@@ -36,6 +40,10 @@ export class OffersService {
         },
       },
     });
+
+    this.offersGateway.notifyOfferCreated(offer);
+
+    return offer;
   }
 
   async update(
@@ -47,7 +55,9 @@ export class OffersService {
     const offer = await this.getOwnedOfferOrThrow(offerId, currentUser.sub);
 
     if (offer.status === OfferStatus.ENCERRADA) {
-      throw new ForbiddenException('Nao e possivel editar uma oferta encerrada.');
+      throw new ForbiddenException(
+        'Nao e possivel editar uma oferta encerrada.',
+      );
     }
 
     return this.prisma.offer.update({
@@ -158,7 +168,9 @@ export class OffersService {
     return offer;
   }
 
-  private buildUpdateData(updateOfferDto: UpdateOfferDto): Prisma.OfferUpdateInput {
+  private buildUpdateData(
+    updateOfferDto: UpdateOfferDto,
+  ): Prisma.OfferUpdateInput {
     return {
       ...(updateOfferDto.title !== undefined
         ? { title: updateOfferDto.title.trim() }

@@ -25,6 +25,10 @@ describe('OffersService', () => {
     },
   };
 
+  const offersGatewayMock = {
+    notifyOfferCreated: jest.fn(),
+  };
+
   let offersService: OffersService;
 
   beforeEach(() => {
@@ -32,11 +36,16 @@ describe('OffersService', () => {
     prismaMock.offer.findUnique.mockReset();
     prismaMock.offer.update.mockReset();
     prismaMock.offer.findMany.mockReset();
-    offersService = new OffersService(prismaMock as never);
+    offersGatewayMock.notifyOfferCreated.mockReset();
+    offersService = new OffersService(
+      prismaMock as never,
+      offersGatewayMock as never,
+    );
   });
 
   it('deve criar oferta para um lojista', async () => {
-    prismaMock.offer.create.mockResolvedValue({ id: 'offer-1' });
+    const createdOffer = { id: 'offer-1' };
+    prismaMock.offer.create.mockResolvedValue(createdOffer);
 
     await offersService.create(shopkeeperUser, {
       title: 'Oferta nova',
@@ -55,6 +64,9 @@ describe('OffersService', () => {
         }),
       }),
     );
+    expect(offersGatewayMock.notifyOfferCreated).toHaveBeenCalledWith(
+      createdOffer,
+    );
   });
 
   it('deve impedir criacao de oferta por comprador', async () => {
@@ -67,6 +79,7 @@ describe('OffersService', () => {
         expiresAt: '2026-04-20T10:00:00.000Z',
       }),
     ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(offersGatewayMock.notifyOfferCreated).not.toHaveBeenCalled();
   });
 
   it('deve editar oferta do proprio lojista', async () => {
