@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { OffersModule } from './offers/offers.module';
 import { SeedModule } from './seed/seed.module';
 
 @Module({
@@ -11,6 +12,7 @@ import { SeedModule } from './seed/seed.module';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
+    OffersModule,
     SeedModule,
   ],
   controllers: [AppController],
