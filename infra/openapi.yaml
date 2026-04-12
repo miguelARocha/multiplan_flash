@@ -15,7 +15,7 @@ info:
     - Namespace: `/offers`
     - URL local: `ws://localhost:3000/offers`
     - Autenticacao aceita token em `auth.token`, query `?token=...` ou header `Authorization: Bearer <token>`.
-    - Compradores recebem o evento `offer.created`.
+    - Compradores recebem os eventos `offer.created` e `offer.updated`.
     - Lojistas recebem o evento `interest.created` quando houver interesse em suas ofertas.
 servers:
   - url: http://localhost:3000/api/v1
@@ -26,7 +26,7 @@ tags:
   - name: Auth
     description: Registro, login e usuario autenticado.
   - name: Offers
-    description: Criacao, listagem, edicao e encerramento de ofertas.
+    description: Criacao, listagem, edicao, reativacao, encerramento e exclusao de ofertas.
   - name: Interests
     description: Registro de interesse de compradores em ofertas.
   - name: WebSocket
@@ -214,7 +214,13 @@ paths:
     patch:
       tags:
         - Offers
-      summary: Edita uma oferta do lojista autenticado
+      summary: Edita ou reativa uma oferta do lojista autenticado
+      description: |
+        Atualiza parcialmente uma oferta do lojista autenticado.
+
+        Para reativar uma oferta encerrada, envie `status: ATIVA` junto dos demais campos necessarios.
+        Ao reativar, a API emite `offer.created` para compradores conectados no WebSocket.
+        Alteracoes relevantes em ofertas ativas emitem `offer.updated`.
       operationId: updateOffer
       security:
         - bearerAuth: []
@@ -233,6 +239,7 @@ paths:
               discountPercentage: 50
               stock: 10
               expiresAt: '2026-04-13T23:59:59.000Z'
+              status: ATIVA
       responses:
         '200':
           description: Oferta atualizada.
@@ -248,12 +255,34 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Offers
+      summary: Exclui uma oferta do lojista autenticado
+      description: |
+        Remove definitivamente uma oferta pertencente ao lojista autenticado.
+        Interesses vinculados tambem sao removidos por cascade no banco.
+      operationId: deleteOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '204':
+          description: Oferta excluida com sucesso.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /offers/{id}/close:
     patch:
       tags:
         - Offers
       summary: Encerra uma oferta do lojista autenticado
+      description: Define o status da oferta como `ENCERRADA`.
       operationId: closeOffer
       security:
         - bearerAuth: []
@@ -306,6 +335,52 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+    delete:
+      tags:
+        - Interests
+      summary: Remove interesse do comprador e restaura o estoque da oferta
+      operationId: deleteInterest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          description: ID da oferta.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Interesse removido com sucesso.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /interests/mine:
+    get:
+      tags:
+        - Interests
+      summary: Lista o historico de interesses do comprador autenticado
+      operationId: listMyInterests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de interesses do comprador.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Interest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
 
   /ws/offers:
     get:
@@ -323,7 +398,7 @@ paths:
         - header `Authorization: Bearer <accessToken>`
 
         Salas e eventos:
-        - Usuario `COMPRADOR`: entra na sala `buyers` e recebe `offer.created`.
+        - Usuario `COMPRADOR`: entra na sala `buyers` e recebe `offer.created` e `offer.updated`.
         - Usuario `LOJISTA`: entra na sala `shopkeeper:{userId}` e recebe `interest.created`.
       responses:
         '101':
@@ -549,6 +624,11 @@ components:
           type: string
           format: date-time
           example: '2026-04-13T23:59:59.000Z'
+        status:
+          allOf:
+            - $ref: '#/components/schemas/OfferStatus'
+          description: Use `ATIVA` para reativar uma oferta encerrada ou `ENCERRADA` para encerrar via edicao.
+          example: ATIVA
 
     OfferShopkeeper:
       type: object
@@ -657,7 +737,15 @@ components:
         - id
         - shopkeeperId
         - title
+        - description
+        - priceInCents
+        - discountPercentage
         - stock
+        - expiresAt
+        - status
+        - createdAt
+        - updatedAt
+        - shopkeeper
       properties:
         id:
           type: string
@@ -668,9 +756,31 @@ components:
         title:
           type: string
           example: Tenis com 40% OFF
+        description:
+          type: string
+          example: Oferta valida enquanto durar o estoque.
+        priceInCents:
+          type: integer
+          example: 12990
+        discountPercentage:
+          type: integer
+          example: 40
         stock:
           type: integer
           example: 24
+        expiresAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/OfferStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        shopkeeper:
+          $ref: '#/components/schemas/OfferShopkeeper'
 
     Interest:
       type: object
