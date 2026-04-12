@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, UseGuards, Version } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Version,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -40,7 +47,9 @@ export class AuthController {
   @Version('1')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Retorna o usuario autenticado a partir do token JWT' })
+  @ApiOperation({
+    summary: 'Retorna o usuario autenticado a partir do token JWT',
+  })
   @ApiOkResponse({ type: CurrentUserResponseDto })
   me(@CurrentUser() user: AuthenticatedUser) {
     return user;

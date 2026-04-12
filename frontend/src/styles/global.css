@@ -885,6 +885,644 @@ a {
   font-weight: 900;
 }
 
+.merchant-dashboard {
+  min-height: 100vh;
+  display: flex;
+  background: var(--surface);
+}
+
+.merchant-sidebar {
+  position: sticky;
+  top: 0;
+  width: 320px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 24px;
+  background: var(--surface-low);
+  box-shadow: 20px 0 40px rgba(78, 33, 30, 0.03);
+}
+
+.merchant-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+.merchant-brand > span {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  color: #ffefeb;
+  background: linear-gradient(135deg, var(--primary), var(--primary-bright));
+  border-radius: 8px;
+}
+
+.merchant-brand strong {
+  display: block;
+  color: var(--primary);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 26px;
+  font-style: italic;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.merchant-brand small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.merchant-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.merchant-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 20px;
+  color: var(--muted);
+  border-radius: 8px;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.merchant-nav a:hover {
+  background: rgba(255, 255, 255, 0.55);
+  transform: translateX(4px);
+}
+
+.merchant-nav a.active {
+  color: var(--secondary);
+  background: var(--surface-white);
+  box-shadow: 0 8px 24px rgba(78, 33, 30, 0.05);
+}
+
+.merchant-status-card {
+  margin-top: auto;
+  padding: 24px;
+  background: var(--surface-container);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 8px;
+}
+
+.merchant-status-card p,
+.merchant-status-card span {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.merchant-status-card strong {
+  display: block;
+  margin: 8px 0 12px;
+  color: var(--primary);
+  font-size: 22px;
+  text-transform: capitalize;
+}
+
+.merchant-content {
+  width: 100%;
+  min-width: 0;
+  padding: 40px 48px 64px;
+}
+
+.merchant-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 auto 32px;
+  max-width: 1480px;
+}
+
+.merchant-topbar h1 {
+  max-width: 860px;
+  margin: 0;
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 42px;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.merchant-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-button,
+.logout-button,
+.primary-dashboard-button,
+.offer-form button,
+.text-action,
+.mobile-fab {
+  border: 0;
+}
+
+.notification-button {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--muted);
+  background: var(--surface-container);
+  border-radius: 8px;
+}
+
+.notification-button i {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  place-items: center;
+  color: #fff;
+  background: var(--primary);
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.logout-button {
+  min-height: 48px;
+  padding: 0 18px;
+  color: var(--primary);
+  background: var(--surface-low);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.dashboard-error {
+  max-width: 1480px;
+  margin: 0 auto 20px;
+  padding: 14px 18px;
+  color: var(--error);
+  background: #ffefee;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.merchant-metrics,
+.merchant-toolbar,
+.offer-form,
+.offers-panel,
+.merchant-alert {
+  max-width: 1480px;
+  margin-inline: auto;
+}
+
+.merchant-metrics {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 24px;
+}
+
+.metric-card {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 32px;
+  background: var(--surface-highest);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(78, 33, 30, 0.04);
+}
+
+.metric-card-large {
+  background: var(--surface-low);
+}
+
+.metric-card-blue {
+  color: #fff;
+  background: var(--secondary);
+}
+
+.metric-card > span {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  color: var(--primary);
+  background: rgba(167, 51, 0, 0.1);
+  border-radius: 8px;
+  font-size: 32px;
+}
+
+.metric-card-blue > span {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.metric-card p {
+  margin: auto 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.metric-card-blue p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.metric-card strong {
+  color: inherit;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 52px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.merchant-alert {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+  padding: 18px 20px;
+  color: #ffefeb;
+  background: var(--primary);
+  border-radius: 8px;
+}
+
+.merchant-alert p {
+  margin: 0;
+  font-weight: 800;
+}
+
+.merchant-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 32px;
+}
+
+.merchant-search {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+}
+
+.merchant-search span {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  color: var(--muted);
+  transform: translateY(-50%);
+}
+
+.merchant-search input {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 22px 0 58px;
+  color: var(--text);
+  background: var(--surface-low);
+  border: 0;
+  border-radius: 999px;
+  outline: 0;
+  box-shadow: 0 8px 20px rgba(78, 33, 30, 0.04);
+}
+
+.merchant-search input:focus {
+  box-shadow: 0 0 0 4px rgba(167, 51, 0, 0.1);
+}
+
+.primary-dashboard-button {
+  min-height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 28px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), #ff5710);
+  border-radius: 999px;
+  box-shadow: 0 18px 36px rgba(167, 51, 0, 0.25);
+  font-weight: 900;
+}
+
+.offer-form {
+  display: grid;
+  grid-template-columns: 1.2fr 1.4fr 0.7fr 0.7fr 1fr 0.8fr auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 14px;
+  background: var(--surface-low);
+  border-radius: 8px;
+}
+
+.offer-form-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.offer-form-header strong {
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 18px;
+}
+
+.offer-form-header button {
+  min-height: 36px;
+  padding: 0;
+  color: var(--primary);
+  background: transparent;
+}
+
+.offer-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.offer-form label span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.offer-form input,
+.offer-form select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  outline: 0;
+}
+
+.offer-form input:focus,
+.offer-form select:focus {
+  border-color: var(--outline);
+}
+
+.offer-form button {
+  min-height: 48px;
+  padding: 0 18px;
+  color: #fff;
+  background: var(--secondary);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.offers-panel {
+  margin-top: 28px;
+  padding: 22px;
+  background: var(--surface-low);
+  border-radius: 8px;
+}
+
+.offers-table {
+  overflow-x: auto;
+}
+
+.offers-table table {
+  width: 100%;
+  min-width: 960px;
+  border-spacing: 0 12px;
+}
+
+.offers-table th {
+  padding: 0 18px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.offers-table td {
+  padding: 18px;
+  color: var(--text);
+  background: #fff;
+  font-weight: 800;
+}
+
+.offers-table td:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.offers-table td:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.offer-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.offer-title-cell img {
+  width: 62px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.offer-title-cell strong,
+.offer-title-cell small {
+  display: block;
+}
+
+.offer-title-cell small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.discount-pill,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.discount-pill {
+  color: var(--primary);
+  background: rgba(167, 51, 0, 0.1);
+}
+
+.status-pill {
+  color: #0f7b3a;
+  background: #dcfce7;
+  font-size: 12px;
+}
+
+.status-pill.encerrada {
+  color: var(--muted);
+  background: var(--surface-container);
+}
+
+.stock-meter {
+  width: 150px;
+}
+
+.stock-meter span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stock-meter div {
+  height: 9px;
+  overflow: hidden;
+  background: var(--surface-container);
+  border-radius: 999px;
+}
+
+.stock-meter i {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+}
+
+.interested-count {
+  color: var(--secondary) !important;
+  font-size: 20px;
+}
+
+.text-action {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  color: var(--primary);
+  background: var(--surface-low);
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.text-action span {
+  font-size: 20px;
+}
+
+.text-action.danger,
+.mobile-card-actions button.danger {
+  color: var(--error);
+}
+
+.offer-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirmation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  padding: 24px;
+  background: rgba(36, 3, 3, 0.42);
+  backdrop-filter: blur(10px);
+}
+
+.confirmation-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: min(100%, 420px);
+  margin: 0;
+  padding: 28px;
+  transform: translate(-50%, -50%);
+  color: var(--text);
+  background: #fff;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 32px 80px rgba(36, 3, 3, 0.24);
+}
+
+.confirmation-dialog > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  color: var(--error);
+  background: #ffefee;
+  border-radius: 8px;
+}
+
+.confirmation-dialog h2 {
+  margin: 18px 0 10px;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 26px;
+  letter-spacing: 0;
+}
+
+.confirmation-dialog p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.confirmation-dialog div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.secondary-dialog-button,
+.danger-dialog-button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.secondary-dialog-button {
+  color: var(--primary);
+  background: var(--surface-low);
+}
+
+.danger-dialog-button {
+  color: #fff;
+  background: var(--error);
+}
+
+.empty-state {
+  margin: 0;
+  padding: 38px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 900;
+}
+
+.mobile-offer-list,
+.mobile-bottom-nav,
+.mobile-fab {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .register-container {
     grid-template-columns: 1fr;
@@ -896,6 +1534,27 @@ a {
 
   .register-form-panel {
     min-height: 100vh;
+  }
+
+  .merchant-sidebar {
+    display: none;
+  }
+
+  .merchant-content {
+    padding: 24px 20px 120px;
+  }
+
+  .merchant-metrics {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card-large {
+    grid-column: span 2;
+  }
+
+  .offer-form {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -966,6 +1625,237 @@ a {
   .topbar {
     align-items: flex-start;
   }
+
+  .merchant-dashboard {
+    display: block;
+    padding-bottom: 96px;
+  }
+
+  .merchant-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin: -24px -20px 20px;
+    padding: 16px 20px;
+    background: rgba(255, 244, 243, 0.92);
+    backdrop-filter: blur(18px);
+  }
+
+  .merchant-topbar .eyebrow {
+    display: none;
+  }
+
+  .merchant-topbar h1 {
+    font-size: 24px;
+  }
+
+  .logout-button {
+    display: none;
+  }
+
+  .merchant-metrics {
+    gap: 10px;
+  }
+
+  .metric-card {
+    min-height: 132px;
+    padding: 18px;
+  }
+
+  .metric-card > span {
+    display: none;
+  }
+
+  .metric-card p {
+    margin: 0 0 8px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .metric-card strong {
+    font-size: 30px;
+  }
+
+  .metric-card-large strong {
+    font-size: 42px;
+  }
+
+  .merchant-alert {
+    align-items: flex-start;
+    margin-top: 18px;
+    padding: 16px;
+  }
+
+  .merchant-toolbar {
+    display: block;
+    margin-top: 22px;
+  }
+
+  .merchant-search {
+    display: block;
+    max-width: none;
+  }
+
+  .primary-dashboard-button {
+    display: none;
+  }
+
+  .offer-form {
+    grid-template-columns: 1fr;
+    position: relative;
+    z-index: 40;
+  }
+
+  .offers-panel {
+    margin-top: 18px;
+    padding: 0;
+    background: transparent;
+  }
+
+  .offers-table {
+    display: none;
+  }
+
+  .mobile-offer-list {
+    display: grid;
+    gap: 14px;
+  }
+
+  .mobile-offer-card {
+    display: flex;
+    gap: 14px;
+    padding: 12px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(78, 33, 30, 0.04);
+  }
+
+  .mobile-offer-card > img {
+    width: 96px;
+    height: 96px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .mobile-offer-card div {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mobile-offer-card span {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .mobile-offer-card h2 {
+    margin: 6px 0;
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .mobile-offer-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+.mobile-card-footer,
+.mobile-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  }
+
+  .mobile-card-footer strong {
+    color: var(--primary);
+    font-size: 13px;
+  }
+
+  .mobile-card-footer small {
+  color: var(--secondary);
+  font-weight: 900;
+}
+
+  .mobile-card-actions {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .mobile-card-actions button {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    padding: 0;
+    color: var(--primary);
+    background: var(--surface-low);
+    border: 0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .mobile-card-actions button span {
+    font-size: 20px;
+  }
+
+  .mobile-fab {
+    position: fixed;
+    right: 24px;
+    bottom: 104px;
+    z-index: 50;
+    width: 64px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: var(--primary);
+    border-radius: 8px;
+    box-shadow: 0 18px 34px rgba(167, 51, 0, 0.32);
+  }
+
+  .mobile-bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 45;
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+    padding: 12px 16px 24px;
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 -4px 32px rgba(78, 33, 30, 0.06);
+  }
+
+  .mobile-bottom-nav a {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    color: var(--muted);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .mobile-bottom-nav a.active {
+    color: var(--primary);
+    background: var(--surface-high);
+  }
 }
 
 @media (max-width: 520px) {
@@ -975,5 +1865,14 @@ a {
 
   .template-divider {
     margin: 34px 0;
+  }
+
+  .merchant-content {
+    padding-inline: 16px;
+  }
+
+  .merchant-topbar {
+    margin-inline: -16px;
+    padding-inline: 16px;
   }
 }

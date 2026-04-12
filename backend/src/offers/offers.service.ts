@@ -52,15 +52,9 @@ export class OffersService {
     updateOfferDto: UpdateOfferDto,
   ) {
     this.ensureShopkeeper(currentUser);
-    const offer = await this.getOwnedOfferOrThrow(offerId, currentUser.sub);
+    await this.getOwnedOfferOrThrow(offerId, currentUser.sub);
 
-    if (offer.status === OfferStatus.ENCERRADA) {
-      throw new ForbiddenException(
-        'Nao e possivel editar uma oferta encerrada.',
-      );
-    }
-
-    return this.prisma.offer.update({
+    const updatedOffer = await this.prisma.offer.update({
       where: { id: offerId },
       data: this.buildUpdateData(updateOfferDto),
       include: {
@@ -73,6 +67,12 @@ export class OffersService {
         },
       },
     });
+
+    if (updateOfferDto.status === OfferStatus.ATIVA) {
+      this.offersGateway.notifyOfferCreated(updatedOffer);
+    }
+
+    return updatedOffer;
   }
 
   async close(currentUser: AuthenticatedUser, offerId: string) {
@@ -91,6 +91,15 @@ export class OffersService {
           },
         },
       },
+    });
+  }
+
+  async remove(currentUser: AuthenticatedUser, offerId: string) {
+    this.ensureShopkeeper(currentUser);
+    await this.getOwnedOfferOrThrow(offerId, currentUser.sub);
+
+    await this.prisma.offer.delete({
+      where: { id: offerId },
     });
   }
 
@@ -186,6 +195,9 @@ export class OffersService {
         : {}),
       ...(updateOfferDto.expiresAt !== undefined
         ? { expiresAt: new Date(updateOfferDto.expiresAt) }
+        : {}),
+      ...(updateOfferDto.status !== undefined
+        ? { status: updateOfferDto.status }
         : {}),
     };
   }

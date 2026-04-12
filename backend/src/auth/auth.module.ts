@@ -15,8 +15,8 @@ import { PasswordService } from './password.service';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const expiresIn =
-          (configService.get<string>('JWT_EXPIRES_IN') ?? '1d') as StringValue;
+        const expiresIn = (configService.get<string>('JWT_EXPIRES_IN') ??
+          '1d') as StringValue;
 
         return {
           secret:

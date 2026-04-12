@@ -3,8 +3,19 @@ import type { Socket } from 'socket.io-client';
 import { API_BASE_URL } from '../api/client';
 import { connectOffersSocket } from '../api/socket';
 import { useAuth } from '../auth/useAuth';
+import { ShopkeeperDashboard } from './ShopkeeperDashboard';
 
 export function AppHome() {
+  const { user } = useAuth();
+
+  if (user?.role === 'LOJISTA') {
+    return <ShopkeeperDashboard />;
+  }
+
+  return <BuyerPlaceholder />;
+}
+
+function BuyerPlaceholder() {
   const { logout, token, user } = useAuth();
   const [socketStatus, setSocketStatus] = useState('conectando...');
 
@@ -37,7 +48,7 @@ export function AppHome() {
       </nav>
 
       <section className="welcome-band">
-        <p className="eyebrow">{user?.role === 'LOJISTA' ? 'Painel do lojista' : 'Feed do comprador'}</p>
+        <p className="eyebrow">Feed do comprador</p>
         <h1>Ola, {user?.name}</h1>
         <p>
           Sessao autenticada com JWT. A proxima etapa encaixa aqui o dashboard, o feed e as

@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -12,6 +14,7 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -49,7 +52,8 @@ export class OffersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Lista ofertas do lojista autenticado com quantidade de interessados',
+    summary:
+      'Lista ofertas do lojista autenticado com quantidade de interessados',
   })
   @ApiOkResponse({ type: ShopkeeperOfferResponseDto, isArray: true })
   listMine(@CurrentUser() currentUser: AuthenticatedUser) {
@@ -76,13 +80,32 @@ export class OffersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Encerra uma oferta do lojista autenticado' })
   @ApiOkResponse({ type: OfferResponseDto })
-  close(@CurrentUser() currentUser: AuthenticatedUser, @Param('id') id: string) {
+  close(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
     return this.offersService.close(currentUser, id);
+  }
+
+  @Delete(':id')
+  @Version('1')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(204)
+  @ApiOperation({ summary: 'Exclui uma oferta do lojista autenticado' })
+  @ApiNoContentResponse({ description: 'Oferta excluida com sucesso.' })
+  remove(
+    @CurrentUser() currentUser: AuthenticatedUser,
+    @Param('id') id: string,
+  ) {
+    return this.offersService.remove(currentUser, id);
   }
 
   @Get()
   @Version('1')
-  @ApiOperation({ summary: 'Lista publicamente as ofertas, por padrao apenas ativas' })
+  @ApiOperation({
+    summary: 'Lista publicamente as ofertas, por padrao apenas ativas',
+  })
   @ApiOkResponse({ type: OfferResponseDto, isArray: true })
   listPublic(@Query() query: ListOffersQueryDto) {
     return this.offersService.listPublic(query);

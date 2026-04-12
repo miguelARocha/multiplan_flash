@@ -68,7 +68,9 @@ export class InterestsService {
       return interest;
     } catch (error) {
       if (this.isUniqueConstraintError(error)) {
-        throw new ConflictException('Interesse ja registrado para esta oferta.');
+        throw new ConflictException(
+          'Interesse ja registrado para esta oferta.',
+        );
       }
 
       throw error;

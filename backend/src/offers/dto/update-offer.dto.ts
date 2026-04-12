@@ -1,12 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
   Max,
   Min,
 } from 'class-validator';
+import { OfferStatus } from '@prisma/client';
 
 export class UpdateOfferDto {
   @ApiPropertyOptional({ example: 'Tênis com 50% OFF' })
@@ -36,4 +38,9 @@ export class UpdateOfferDto {
   @IsOptional()
   @IsDateString()
   expiresAt?: string;
+
+  @ApiPropertyOptional({ enum: OfferStatus, example: OfferStatus.ATIVA })
+  @IsOptional()
+  @IsEnum(OfferStatus)
+  status?: OfferStatus;
 }

@@ -22,6 +22,7 @@ describe('OffersService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      delete: jest.fn(),
     },
   };
 
@@ -36,6 +37,7 @@ describe('OffersService', () => {
     prismaMock.offer.findUnique.mockReset();
     prismaMock.offer.update.mockReset();
     prismaMock.offer.findMany.mockReset();
+    prismaMock.offer.delete.mockReset();
     offersGatewayMock.notifyOfferCreated.mockReset();
     offersService = new OffersService(
       prismaMock as never,
@@ -106,18 +108,37 @@ describe('OffersService', () => {
     );
   });
 
-  it('deve impedir edicao de oferta encerrada', async () => {
+  it('deve permitir editar e reativar oferta encerrada', async () => {
     prismaMock.offer.findUnique.mockResolvedValue({
       id: 'offer-1',
       shopkeeperId: 'shopkeeper-1',
       status: OfferStatus.ENCERRADA,
     });
+    prismaMock.offer.update.mockResolvedValue({
+      id: 'offer-1',
+      status: OfferStatus.ATIVA,
+    });
 
-    await expect(
-      offersService.update(shopkeeperUser, 'offer-1', {
-        title: 'Nao pode',
+    await offersService.update(shopkeeperUser, 'offer-1', {
+      title: 'Pode voltar',
+      status: OfferStatus.ATIVA,
+    });
+
+    expect(prismaMock.offer.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'offer-1' },
+        data: expect.objectContaining({
+          title: 'Pode voltar',
+          status: OfferStatus.ATIVA,
+        }),
       }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    );
+    expect(offersGatewayMock.notifyOfferCreated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'offer-1',
+        status: OfferStatus.ATIVA,
+      }),
+    );
   });
 
   it('deve impedir alteracao de oferta de outro lojista', async () => {
@@ -138,6 +159,20 @@ describe('OffersService', () => {
     await expect(
       offersService.close(shopkeeperUser, 'offer-404'),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('deve excluir oferta do lojista autenticado', async () => {
+    prismaMock.offer.findUnique.mockResolvedValue({
+      id: 'offer-1',
+      shopkeeperId: 'shopkeeper-1',
+      status: OfferStatus.ATIVA,
+    });
+
+    await offersService.remove(shopkeeperUser, 'offer-1');
+
+    expect(prismaMock.offer.delete).toHaveBeenCalledWith({
+      where: { id: 'offer-1' },
+    });
   });
 
   it('deve listar publicamente apenas ofertas ativas por padrao', async () => {
