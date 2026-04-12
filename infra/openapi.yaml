@@ -1,0 +1,699 @@
+openapi: 3.0.3
+info:
+  title: Multiplan Flash API
+  version: 1.0.0
+  description: |
+    Collection OpenAPI v3 para testar a API do backend em clientes HTTP.
+
+    A API usa prefixo global `/api` e versionamento por URI (`/v1`).
+
+    Autenticacao:
+    - Faca login ou registro e copie o `accessToken` retornado.
+    - Envie o token nas rotas protegidas usando `Authorization: Bearer <token>`.
+
+    WebSocket Socket.IO:
+    - Namespace: `/offers`
+    - URL local: `ws://localhost:3000/offers`
+    - Autenticacao aceita token em `auth.token`, query `?token=...` ou header `Authorization: Bearer <token>`.
+    - Compradores recebem o evento `offer.created`.
+    - Lojistas recebem o evento `interest.created` quando houver interesse em suas ofertas.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Backend local via NestJS
+tags:
+  - name: Health
+    description: Verificacao simples da API.
+  - name: Auth
+    description: Registro, login e usuario autenticado.
+  - name: Offers
+    description: Criacao, listagem, edicao e encerramento de ofertas.
+  - name: Interests
+    description: Registro de interesse de compradores em ofertas.
+  - name: WebSocket
+    description: Eventos em tempo real via Socket.IO no namespace /offers.
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Verifica se a API esta respondendo
+      operationId: getHealth
+      responses:
+        '200':
+          description: API respondendo.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Hello World!
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Cria um novo usuario
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              comprador:
+                summary: Comprador
+                value:
+                  name: Maria da Silva
+                  email: maria@empresa.com
+                  password: senhaSegura123
+                  role: COMPRADOR
+              lojista:
+                summary: Lojista
+                value:
+                  name: Loja Central
+                  email: loja@empresa.com
+                  password: senhaSegura123
+                  role: LOJISTA
+      responses:
+        '201':
+          description: Usuario criado e autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Autentica um usuario
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: maria@empresa.com
+              password: senhaSegura123
+      responses:
+        '200':
+          description: Usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Retorna o usuario autenticado a partir do token JWT
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario autenticado extraido do JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /offers:
+    get:
+      tags:
+        - Offers
+      summary: Lista publicamente as ofertas, por padrao apenas ativas
+      operationId: listPublicOffers
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filtra ofertas por status.
+          schema:
+            $ref: '#/components/schemas/OfferStatus'
+          example: ATIVA
+      responses:
+        '200':
+          description: Lista de ofertas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Offer'
+    post:
+      tags:
+        - Offers
+      summary: Cria uma oferta para o lojista autenticado
+      operationId: createOffer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOfferRequest'
+            example:
+              title: Tenis com 40% OFF
+              description: Oferta valida enquanto durar o estoque.
+              discountPercentage: 40
+              stock: 25
+              expiresAt: '2026-04-12T23:59:59.000Z'
+      responses:
+        '201':
+          description: Oferta criada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /offers/mine:
+    get:
+      tags:
+        - Offers
+      summary: Lista ofertas do lojista autenticado com quantidade de interessados
+      operationId: listMyOffers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de ofertas do lojista.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShopkeeperOffer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /offers/{id}:
+    patch:
+      tags:
+        - Offers
+      summary: Edita uma oferta do lojista autenticado
+      operationId: updateOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOfferRequest'
+            example:
+              title: Tenis com 50% OFF
+              description: Ultimas unidades da campanha.
+              discountPercentage: 50
+              stock: 10
+              expiresAt: '2026-04-13T23:59:59.000Z'
+      responses:
+        '200':
+          description: Oferta atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /offers/{id}/close:
+    patch:
+      tags:
+        - Offers
+      summary: Encerra uma oferta do lojista autenticado
+      operationId: closeOffer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OfferId'
+      responses:
+        '200':
+          description: Oferta encerrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /offers/{offerId}/interests:
+    post:
+      tags:
+        - Interests
+      summary: Registra interesse do comprador e decrementa o estoque
+      operationId: createInterest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          description: ID da oferta.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Interesse registrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Interest'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /ws/offers:
+    get:
+      tags:
+        - WebSocket
+      summary: Documentacao do namespace Socket.IO /offers
+      description: |
+        Este item e apenas uma referencia para clientes que suportam documentar WebSocket junto da collection HTTP.
+
+        Conecte usando Socket.IO em `ws://localhost:3000/offers`.
+
+        Formas de autenticar:
+        - `auth: { "token": "<accessToken>" }`
+        - query string `?token=<accessToken>`
+        - header `Authorization: Bearer <accessToken>`
+
+        Salas e eventos:
+        - Usuario `COMPRADOR`: entra na sala `buyers` e recebe `offer.created`.
+        - Usuario `LOJISTA`: entra na sala `shopkeeper:{userId}` e recebe `interest.created`.
+      responses:
+        '101':
+          description: Upgrade para WebSocket/Socket.IO quando usado pelo cliente adequado.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    OfferId:
+      name: id
+      in: path
+      required: true
+      description: ID da oferta.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Requisicao invalida ou erro de validacao.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Token ausente, invalido ou credenciais invalidas.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Usuario sem permissao para executar a acao.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Recurso nao encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflito com estado atual, como email ja cadastrado ou interesse duplicado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    UserRole:
+      type: string
+      enum:
+        - LOJISTA
+        - COMPRADOR
+
+    OfferStatus:
+      type: string
+      enum:
+        - ATIVA
+        - ENCERRADA
+
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+          example: Maria da Silva
+        email:
+          type: string
+          format: email
+          example: maria@empresa.com
+        password:
+          type: string
+          minLength: 8
+          example: senhaSegura123
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: maria@empresa.com
+        password:
+          type: string
+          minLength: 8
+          example: senhaSegura123
+
+    AuthUser:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - role
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Maria da Silva
+        email:
+          type: string
+          format: email
+          example: maria@empresa.com
+        role:
+          $ref: '#/components/schemas/UserRole'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - user
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/AuthUser'
+
+    CurrentUser:
+      type: object
+      required:
+        - sub
+        - email
+        - role
+      properties:
+        sub:
+          type: string
+          format: uuid
+          description: ID do usuario autenticado.
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/UserRole'
+
+    CreateOfferRequest:
+      type: object
+      required:
+        - title
+        - description
+        - discountPercentage
+        - stock
+        - expiresAt
+      properties:
+        title:
+          type: string
+          example: Tenis com 40% OFF
+        description:
+          type: string
+          example: Oferta valida enquanto durar o estoque.
+        discountPercentage:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 40
+        stock:
+          type: integer
+          minimum: 0
+          example: 25
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-04-12T23:59:59.000Z'
+
+    UpdateOfferRequest:
+      type: object
+      minProperties: 1
+      properties:
+        title:
+          type: string
+          example: Tenis com 50% OFF
+        description:
+          type: string
+          example: Ultimas unidades da campanha.
+        discountPercentage:
+          type: integer
+          minimum: 1
+          maximum: 100
+          example: 50
+        stock:
+          type: integer
+          minimum: 0
+          example: 10
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-04-13T23:59:59.000Z'
+
+    OfferShopkeeper:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Loja Central
+        email:
+          type: string
+          format: email
+          example: loja@empresa.com
+
+    Offer:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - discountPercentage
+        - stock
+        - expiresAt
+        - status
+        - shopkeeperId
+        - createdAt
+        - updatedAt
+        - shopkeeper
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Tenis com 40% OFF
+        description:
+          type: string
+          example: Oferta valida enquanto durar o estoque.
+        discountPercentage:
+          type: integer
+          example: 40
+        stock:
+          type: integer
+          example: 25
+        expiresAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/OfferStatus'
+        shopkeeperId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        shopkeeper:
+          $ref: '#/components/schemas/OfferShopkeeper'
+
+    ShopkeeperOffer:
+      allOf:
+        - $ref: '#/components/schemas/Offer'
+        - type: object
+          required:
+            - interestedCount
+          properties:
+            interestedCount:
+              type: integer
+              minimum: 0
+              description: Quantidade de compradores interessados nesta oferta.
+              example: 3
+
+    InterestBuyer:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Maria da Silva
+        email:
+          type: string
+          format: email
+          example: maria@empresa.com
+
+    InterestOffer:
+      type: object
+      required:
+        - id
+        - shopkeeperId
+        - title
+        - stock
+      properties:
+        id:
+          type: string
+          format: uuid
+        shopkeeperId:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Tenis com 40% OFF
+        stock:
+          type: integer
+          example: 24
+
+    Interest:
+      type: object
+      required:
+        - id
+        - buyerId
+        - offerId
+        - createdAt
+        - buyer
+        - offer
+      properties:
+        id:
+          type: string
+          format: uuid
+        buyerId:
+          type: string
+          format: uuid
+        offerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        buyer:
+          $ref: '#/components/schemas/InterestBuyer'
+        offer:
+          $ref: '#/components/schemas/InterestOffer'
+
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          example: Validation failed
+        error:
+          type: string
+          example: Bad Request
