@@ -158,3 +158,4 @@ Para detalhes de payloads e respostas, use o Swagger em `http://localhost:3000/a
 - O compose publica backend em `3000`, frontend em `5173` e banco em `5433`.
 - O seed cria os usuarios padrao quando o backend inicia.
 - Caso o banco seja recriado do zero, o backend aplica as migrations automaticamente ao subir pelo Docker Compose.
+- Foi utilizado o servico de IA Google Stitch para producao de conceito de design do frontend.
