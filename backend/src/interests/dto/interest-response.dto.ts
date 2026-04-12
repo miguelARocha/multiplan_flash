@@ -22,7 +22,22 @@ class InterestOfferDto {
   title: string;
 
   @ApiProperty()
+  description: string;
+
+  @ApiProperty()
+  priceInCents: number;
+
+  @ApiProperty()
+  discountPercentage: number;
+
+  @ApiProperty()
   stock: number;
+
+  @ApiProperty()
+  expiresAt: Date;
+
+  @ApiProperty()
+  status: string;
 }
 
 export class InterestResponseDto {

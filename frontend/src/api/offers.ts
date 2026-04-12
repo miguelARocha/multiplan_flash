@@ -52,17 +52,23 @@ export type Interest = {
     name: string;
     email: string;
   };
-  offer: {
-    id: string;
-    shopkeeperId: string;
-    title: string;
-    stock: number;
-  };
+  offer: Offer;
 };
+
+export function listMyInterests(token: string) {
+  return apiRequest<Interest[]>('/interests/mine', { token });
+}
 
 export function createInterest(offerId: string, token: string) {
   return apiRequest<Interest>(`/offers/${offerId}/interests`, {
     method: 'POST',
+    token,
+  });
+}
+
+export function deleteInterest(offerId: string, token: string) {
+  return apiRequest<void>(`/offers/${offerId}/interests`, {
+    method: 'DELETE',
     token,
   });
 }

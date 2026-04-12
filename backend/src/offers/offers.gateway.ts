@@ -52,6 +52,10 @@ export class OffersGateway implements OnGatewayConnection {
     this.server.to(BUYERS_ROOM).emit('offer.created', offer);
   }
 
+  notifyOfferUpdated(offer: OfferResponseDto) {
+    this.server.to(BUYERS_ROOM).emit('offer.updated', offer);
+  }
+
   notifyInterestCreated(interest: InterestResponseDto) {
     this.server
       .to(shopkeeperRoom(interest.offer.shopkeeperId))

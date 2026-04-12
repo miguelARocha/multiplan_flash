@@ -11,6 +11,15 @@ import { ListOffersQueryDto } from './dto/list-offers-query.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { OffersGateway } from './offers.gateway';
 
+type BuyerVisibleOffer = {
+  priceInCents: number;
+  discountPercentage: number;
+  stock: number;
+  expiresAt: Date;
+  title: string;
+  description: string;
+};
+
 @Injectable()
 export class OffersService {
   constructor(
@@ -53,7 +62,10 @@ export class OffersService {
     updateOfferDto: UpdateOfferDto,
   ) {
     this.ensureShopkeeper(currentUser);
-    await this.getOwnedOfferOrThrow(offerId, currentUser.sub);
+    const previousOffer = await this.getOwnedOfferOrThrow(
+      offerId,
+      currentUser.sub,
+    );
 
     const updatedOffer = await this.prisma.offer.update({
       where: { id: offerId },
@@ -71,6 +83,11 @@ export class OffersService {
 
     if (updateOfferDto.status === OfferStatus.ATIVA) {
       this.offersGateway.notifyOfferCreated(updatedOffer);
+    } else if (
+      updatedOffer.status === OfferStatus.ATIVA &&
+      this.hasBuyerVisibleChange(previousOffer, updatedOffer)
+    ) {
+      this.offersGateway.notifyOfferUpdated(updatedOffer);
     }
 
     return updatedOffer;
@@ -105,9 +122,14 @@ export class OffersService {
   }
 
   async listPublic(query: ListOffersQueryDto) {
+    const status = query.status ?? OfferStatus.ATIVA;
+
     return this.prisma.offer.findMany({
       where: {
-        status: query.status ?? OfferStatus.ATIVA,
+        status,
+        ...(status === OfferStatus.ATIVA
+          ? { expiresAt: { gt: new Date() } }
+          : {}),
       },
       orderBy: [{ createdAt: 'desc' }],
       include: {
@@ -204,5 +226,19 @@ export class OffersService {
         ? { status: updateOfferDto.status }
         : {}),
     };
+  }
+
+  private hasBuyerVisibleChange(
+    previousOffer: BuyerVisibleOffer,
+    updatedOffer: BuyerVisibleOffer,
+  ) {
+    return (
+      previousOffer.priceInCents !== updatedOffer.priceInCents ||
+      previousOffer.discountPercentage !== updatedOffer.discountPercentage ||
+      previousOffer.stock !== updatedOffer.stock ||
+      previousOffer.expiresAt.getTime() !== updatedOffer.expiresAt.getTime() ||
+      previousOffer.title !== updatedOffer.title ||
+      previousOffer.description !== updatedOffer.description
+    );
   }
 }

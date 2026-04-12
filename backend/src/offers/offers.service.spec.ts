@@ -28,6 +28,7 @@ describe('OffersService', () => {
 
   const offersGatewayMock = {
     notifyOfferCreated: jest.fn(),
+    notifyOfferUpdated: jest.fn(),
   };
 
   let offersService: OffersService;
@@ -39,6 +40,7 @@ describe('OffersService', () => {
     prismaMock.offer.findMany.mockReset();
     prismaMock.offer.delete.mockReset();
     offersGatewayMock.notifyOfferCreated.mockReset();
+    offersGatewayMock.notifyOfferUpdated.mockReset();
     offersService = new OffersService(
       prismaMock as never,
       offersGatewayMock as never,
@@ -187,8 +189,39 @@ describe('OffersService', () => {
 
     expect(prismaMock.offer.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { status: OfferStatus.ATIVA },
+        where: {
+          status: OfferStatus.ATIVA,
+          expiresAt: { gt: expect.any(Date) },
+        },
       }),
+    );
+  });
+
+  it('deve notificar compradores quando uma oferta ativa muda de preco', async () => {
+    const previousOffer = {
+      id: 'offer-1',
+      shopkeeperId: 'shopkeeper-1',
+      status: OfferStatus.ATIVA,
+      title: 'Oferta',
+      description: 'Descricao',
+      priceInCents: 12990,
+      discountPercentage: 30,
+      stock: 10,
+      expiresAt: new Date('2026-04-20T10:00:00.000Z'),
+    };
+    const updatedOffer = {
+      ...previousOffer,
+      priceInCents: 11990,
+    };
+    prismaMock.offer.findUnique.mockResolvedValue(previousOffer);
+    prismaMock.offer.update.mockResolvedValue(updatedOffer);
+
+    await offersService.update(shopkeeperUser, 'offer-1', {
+      priceInCents: 11990,
+    });
+
+    expect(offersGatewayMock.notifyOfferUpdated).toHaveBeenCalledWith(
+      updatedOffer,
     );
   });
 

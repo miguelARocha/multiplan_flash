@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { Socket } from "socket.io-client";
 import {
   createInterest,
+  deleteInterest,
   listActiveOffers,
+  listMyInterests,
   type Interest,
   type Offer,
 } from "../api/offers";
@@ -15,6 +17,14 @@ type BuyerNotification = {
   description: string;
   createdAt: string;
 };
+
+type AlertSettings = {
+  flashOffers: boolean;
+  priceChanges: boolean;
+  onlyAvailable: boolean;
+};
+
+const alertSettingsStorageKey = "flash:buyer-alert-settings";
 
 const productImages = [
   "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=320&q=80",
@@ -62,6 +72,32 @@ function getStockPercent(offer: Offer) {
   return Math.max(8, Math.min(100, offer.stock * 8));
 }
 
+function isOfferActive(offer: Offer) {
+  return (
+    offer.status === "ATIVA" && new Date(offer.expiresAt).getTime() > Date.now()
+  );
+}
+
+function loadAlertSettings(): AlertSettings {
+  const fallback = {
+    flashOffers: true,
+    priceChanges: true,
+    onlyAvailable: true,
+  };
+
+  try {
+    const payload = localStorage.getItem(alertSettingsStorageKey);
+
+    if (!payload) {
+      return fallback;
+    }
+
+    return { ...fallback, ...JSON.parse(payload) };
+  } catch {
+    return fallback;
+  }
+}
+
 export function BuyerDashboard() {
   const { logout, token, user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -70,15 +106,35 @@ export function BuyerDashboard() {
   const [socketStatus, setSocketStatus] = useState("conectando...");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingInterests, setIsLoadingInterests] = useState(true);
   const [pendingOfferId, setPendingOfferId] = useState<string | null>(null);
+  const [alertSettings, setAlertSettings] = useState(loadAlertSettings);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     listActiveOffers()
-      .then(setOffers)
+      .then((activeOffers) => setOffers(activeOffers.filter(isOfferActive)))
       .catch((requestError: Error) => setError(requestError.message))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      alertSettingsStorageKey,
+      JSON.stringify(alertSettings),
+    );
+  }, [alertSettings]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    listMyInterests(token)
+      .then(setInterests)
+      .catch((requestError: Error) => setError(requestError.message))
+      .finally(() => setIsLoadingInterests(false));
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -91,47 +147,82 @@ export function BuyerDashboard() {
     socket.on("connect_error", () => setSocketStatus("falha na conexao"));
     socket.on("disconnect", () => setSocketStatus("desconectado"));
     socket.on("offer.created", (offer: Offer) => {
+      if (!isOfferActive(offer)) {
+        return;
+      }
+
       setOffers((current) => [
         offer,
         ...current.filter((currentOffer) => currentOffer.id !== offer.id),
       ]);
-      setNotifications((current) =>
-        [
-          {
-            id: offer.id,
-            title: "Nova oferta relampago",
-            description: `${offer.title} entrou no ar com ${offer.discountPercentage}% OFF.`,
-            createdAt: new Date().toISOString(),
-          },
-          ...current,
-        ].slice(0, 5),
-      );
+
+      if (alertSettings.flashOffers) {
+        setNotifications((current) =>
+          [
+            {
+              id: offer.id,
+              title: "Nova oferta relampago",
+              description: `${offer.title} entrou no ar com ${offer.discountPercentage}% OFF.`,
+              createdAt: new Date().toISOString(),
+            },
+            ...current,
+          ].slice(0, 5),
+        );
+      }
+    });
+    socket.on("offer.updated", (offer: Offer) => {
+      setOffers((current) => {
+        const remainingOffers = current.filter(
+          (currentOffer) => currentOffer.id !== offer.id,
+        );
+
+        return isOfferActive(offer) ? [offer, ...remainingOffers] : remainingOffers;
+      });
+
+      if (alertSettings.priceChanges) {
+        setNotifications((current) =>
+          [
+            {
+              id: `${offer.id}-updated-${Date.now()}`,
+              title: "Oferta atualizada",
+              description: `${offer.title} agora está com ${offer.discountPercentage}% OFF por ${formatCurrencyFromCents(getDiscountedPriceInCents(offer))}.`,
+              createdAt: new Date().toISOString(),
+            },
+            ...current,
+          ].slice(0, 5),
+        );
+      }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [token]);
+  }, [alertSettings.flashOffers, alertSettings.priceChanges, token]);
 
   const filteredOffers = useMemo(() => {
     const query = search.trim().toLowerCase();
 
+    const visibleOffers = offers
+      .filter(isOfferActive)
+      .filter((offer) => !alertSettings.onlyAvailable || offer.stock > 0);
+
     if (!query) {
-      return offers;
+      return visibleOffers;
     }
 
-    return offers.filter(
+    return visibleOffers.filter(
       (offer) =>
         offer.title.toLowerCase().includes(query) ||
         offer.description.toLowerCase().includes(query) ||
         offer.shopkeeper?.name.toLowerCase().includes(query),
     );
-  }, [offers, search]);
+  }, [alertSettings.onlyAvailable, offers, search]);
 
   const activeInterests = useMemo(
     () =>
       interests.filter((interest) =>
-        offers.some((offer) => offer.id === interest.offerId),
+        offers.some((offer) => offer.id === interest.offerId) ||
+        isOfferActive(interest.offer),
       ),
     [interests, offers],
   );
@@ -139,9 +230,9 @@ export function BuyerDashboard() {
   const estimatedSavingsInCents = useMemo(
     () =>
       activeInterests.reduce((total, interest) => {
-        const offer = offers.find(
-          (currentOffer) => currentOffer.id === interest.offerId,
-        );
+        const offer =
+          offers.find((currentOffer) => currentOffer.id === interest.offerId) ??
+          interest.offer;
 
         return offer ? total + getDiscountValueInCents(offer) : total;
       }, 0),
@@ -149,6 +240,11 @@ export function BuyerDashboard() {
   );
 
   const notificationCount = notifications.length;
+  const activeOffersCount = offers.filter(isOfferActive).length;
+
+  function updateAlertSetting(key: keyof AlertSettings, value: boolean) {
+    setAlertSettings((current) => ({ ...current, [key]: value }));
+  }
 
   async function handleCreateInterest(offer: Offer) {
     if (!token) {
@@ -160,7 +256,12 @@ export function BuyerDashboard() {
 
     try {
       const interest = await createInterest(offer.id, token);
-      setInterests((current) => [interest, ...current]);
+      setInterests((current) => [
+        interest,
+        ...current.filter(
+          (currentInterest) => currentInterest.offerId !== offer.id,
+        ),
+      ]);
       setOffers((current) =>
         current.map((currentOffer) =>
           currentOffer.id === offer.id
@@ -184,6 +285,48 @@ export function BuyerDashboard() {
         requestError instanceof Error
           ? requestError.message
           : "Nao foi possivel registrar interesse.",
+      );
+    } finally {
+      setPendingOfferId(null);
+    }
+  }
+
+  async function handleDeleteInterest(offer: Offer) {
+    if (!token) {
+      return;
+    }
+
+    setPendingOfferId(offer.id);
+    setError(null);
+
+    try {
+      await deleteInterest(offer.id, token);
+      setInterests((current) =>
+        current.filter((interest) => interest.offerId !== offer.id),
+      );
+      setOffers((current) =>
+        current.map((currentOffer) =>
+          currentOffer.id === offer.id
+            ? { ...currentOffer, stock: currentOffer.stock + 1 }
+            : currentOffer,
+        ),
+      );
+      setNotifications((current) =>
+        [
+          {
+            id: `${offer.id}-removed`,
+            title: "Interesse removido",
+            description: `Você desistiu da oferta ${offer.title}.`,
+            createdAt: new Date().toISOString(),
+          },
+          ...current,
+        ].slice(0, 5),
+      );
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Nao foi possivel desistir do interesse.",
       );
     } finally {
       setPendingOfferId(null);
@@ -255,7 +398,7 @@ export function BuyerDashboard() {
               <p className="eyebrow">Feed do comprador</p>
               <h1>Olá, {user?.name ?? "comprador"}</h1>
               <p>
-                Você tem <strong>{offers.length} ofertas</strong> ativas agora.
+                Você tem <strong>{activeOffersCount} ofertas</strong> ativas agora.
               </p>
             </div>
 
@@ -272,7 +415,7 @@ export function BuyerDashboard() {
             <article>
               <span className="material-symbols-outlined">local_mall</span>
               <p>Ofertas ativas</p>
-              <strong>{offers.length}</strong>
+              <strong>{activeOffersCount}</strong>
             </article>
             <article className="buyer-metric-blue">
               <span className="material-symbols-outlined">savings</span>
@@ -332,15 +475,20 @@ export function BuyerDashboard() {
                         </div>
                         <button
                           disabled={
-                            hasInterest ||
                             pendingOfferId === offer.id ||
-                            offer.stock <= 0
+                            (!hasInterest && offer.stock <= 0)
                           }
-                          onClick={() => handleCreateInterest(offer)}
+                          onClick={() =>
+                            hasInterest
+                              ? handleDeleteInterest(offer)
+                              : handleCreateInterest(offer)
+                          }
                           type="button"
                         >
                           {hasInterest
-                            ? "Interesse registrado"
+                            ? pendingOfferId === offer.id
+                              ? "Removendo..."
+                              : "Desistir do interesse"
                             : pendingOfferId === offer.id
                               ? "Registrando..."
                               : "Tenho interesse"}
@@ -353,8 +501,10 @@ export function BuyerDashboard() {
 
               <section className="buyer-history" id="interesses">
                 <h2>Histórico de interesses</h2>
-                {interests.length === 0 ? (
-                  <p>Nenhum interesse registrado nesta sessao.</p>
+                {isLoadingInterests ? (
+                  <p>Carregando interesses...</p>
+                ) : interests.length === 0 ? (
+                  <p>Nenhum interesse registrado.</p>
                 ) : (
                   interests.map((interest) => (
                     <article key={interest.id}>
@@ -371,6 +521,16 @@ export function BuyerDashboard() {
                           }).format(new Date(interest.createdAt))}
                         </small>
                       </div>
+                      <button
+                        className="buyer-history-action"
+                        disabled={pendingOfferId === interest.offerId}
+                        onClick={() => handleDeleteInterest(interest.offer)}
+                        type="button"
+                      >
+                        {pendingOfferId === interest.offerId
+                          ? "Removendo..."
+                          : "Desistir"}
+                      </button>
                     </article>
                   ))
                 )}
@@ -382,11 +542,33 @@ export function BuyerDashboard() {
                 <h2>Configurações de alerta</h2>
                 <label>
                   <span>Ofertas relampago</span>
-                  <input defaultChecked type="checkbox" />
+                  <input
+                    checked={alertSettings.flashOffers}
+                    onChange={(event) =>
+                      updateAlertSetting("flashOffers", event.target.checked)
+                    }
+                    type="checkbox"
+                  />
                 </label>
                 <label>
                   <span>Mudança de preço</span>
-                  <input type="checkbox" />
+                  <input
+                    checked={alertSettings.priceChanges}
+                    onChange={(event) =>
+                      updateAlertSetting("priceChanges", event.target.checked)
+                    }
+                    type="checkbox"
+                  />
+                </label>
+                <label>
+                  <span>Somente com estoque</span>
+                  <input
+                    checked={alertSettings.onlyAvailable}
+                    onChange={(event) =>
+                      updateAlertSetting("onlyAvailable", event.target.checked)
+                    }
+                    type="checkbox"
+                  />
                 </label>
               </section>
 

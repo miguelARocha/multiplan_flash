@@ -1599,6 +1599,7 @@ a {
 .buyer-icon-button,
 .buyer-logout,
 .buyer-offer-card button,
+.buyer-history-action,
 .buyer-bottom-nav button {
   border: 0;
 }
@@ -2006,6 +2007,21 @@ a {
   gap: 14px;
   padding: 14px 0;
   border-top: 1px solid rgba(224, 156, 150, 0.32);
+}
+
+.buyer-history article > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.buyer-history-action {
+  min-height: 36px;
+  padding: 0 12px;
+  color: var(--primary);
+  background: var(--surface-low);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .buyer-history article:first-of-type,

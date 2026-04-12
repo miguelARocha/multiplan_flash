@@ -43,23 +43,7 @@ export class InterestsService {
             buyerId: currentUser.sub,
             offerId,
           },
-          include: {
-            buyer: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-            offer: {
-              select: {
-                id: true,
-                shopkeeperId: true,
-                title: true,
-                stock: true,
-              },
-            },
-          },
+          include: this.interestInclude,
         });
       });
 
@@ -75,6 +59,55 @@ export class InterestsService {
 
       throw error;
     }
+  }
+
+  async listMine(currentUser: AuthenticatedUser) {
+    this.ensureBuyer(currentUser);
+
+    return this.prisma.interest.findMany({
+      where: {
+        buyerId: currentUser.sub,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      include: this.interestInclude,
+    });
+  }
+
+  async remove(currentUser: AuthenticatedUser, offerId: string) {
+    this.ensureBuyer(currentUser);
+
+    await this.prisma.$transaction(async (tx) => {
+      const interest = await tx.interest.findUnique({
+        where: {
+          buyerId_offerId: {
+            buyerId: currentUser.sub,
+            offerId,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!interest) {
+        throw new NotFoundException('Interesse nao encontrado.');
+      }
+
+      await tx.interest.delete({
+        where: {
+          id: interest.id,
+        },
+      });
+
+      await tx.offer.update({
+        where: {
+          id: offerId,
+        },
+        data: {
+          stock: { increment: 1 },
+        },
+      });
+    });
   }
 
   private ensureBuyer(currentUser: AuthenticatedUser) {
@@ -119,4 +152,25 @@ export class InterestsService {
       error.code === 'P2002'
     );
   }
+
+  private readonly interestInclude = {
+    buyer: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    },
+    offer: {
+      include: {
+        shopkeeper: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    },
+  } satisfies Prisma.InterestInclude;
 }

@@ -25,14 +25,20 @@ describe('InterestsService', () => {
     offer: {
       updateMany: jest.fn(),
       findUnique: jest.fn(),
+      update: jest.fn(),
     },
     interest: {
       create: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
     },
   };
 
   const prismaMock = {
     $transaction: jest.fn(),
+    interest: {
+      findMany: jest.fn(),
+    },
   };
 
   const offersGatewayMock = {
@@ -44,8 +50,12 @@ describe('InterestsService', () => {
   beforeEach(() => {
     txMock.offer.updateMany.mockReset();
     txMock.offer.findUnique.mockReset();
+    txMock.offer.update.mockReset();
     txMock.interest.create.mockReset();
+    txMock.interest.findUnique.mockReset();
+    txMock.interest.delete.mockReset();
     prismaMock.$transaction.mockReset();
+    prismaMock.interest.findMany.mockReset();
     offersGatewayMock.notifyInterestCreated.mockReset();
     prismaMock.$transaction.mockImplementation((callback) => callback(txMock));
     interestsService = new InterestsService(
@@ -87,14 +97,7 @@ describe('InterestsService', () => {
           offerId: 'offer-1',
         },
         include: expect.objectContaining({
-          offer: {
-            select: {
-              id: true,
-              shopkeeperId: true,
-              title: true,
-              stock: true,
-            },
-          },
+          offer: expect.any(Object),
         }),
       }),
     );
@@ -109,6 +112,49 @@ describe('InterestsService', () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
     expect(offersGatewayMock.notifyInterestCreated).not.toHaveBeenCalled();
+  });
+
+  it('deve listar interesses do comprador autenticado', async () => {
+    prismaMock.interest.findMany.mockResolvedValue([]);
+
+    await interestsService.listMine(buyerUser);
+
+    expect(prismaMock.interest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          buyerId: 'buyer-1',
+        },
+        orderBy: [{ createdAt: 'desc' }],
+      }),
+    );
+  });
+
+  it('deve remover interesse e restaurar estoque', async () => {
+    txMock.interest.findUnique.mockResolvedValue({ id: 'interest-1' });
+
+    await interestsService.remove(buyerUser, 'offer-1');
+
+    expect(txMock.interest.delete).toHaveBeenCalledWith({
+      where: {
+        id: 'interest-1',
+      },
+    });
+    expect(txMock.offer.update).toHaveBeenCalledWith({
+      where: {
+        id: 'offer-1',
+      },
+      data: {
+        stock: { increment: 1 },
+      },
+    });
+  });
+
+  it('deve falhar ao remover interesse inexistente', async () => {
+    txMock.interest.findUnique.mockResolvedValue(null);
+
+    await expect(
+      interestsService.remove(buyerUser, 'offer-404'),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('deve falhar quando oferta nao existir', async () => {
