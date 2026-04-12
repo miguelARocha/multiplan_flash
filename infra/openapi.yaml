@@ -40,12 +40,11 @@ paths:
       operationId: getHealth
       responses:
         '200':
-          description: API respondendo.
+          description: API respondendo com metadados basicos de saude.
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: Hello World!
+                $ref: '#/components/schemas/HealthResponse'
 
   /auth/register:
     post:
@@ -465,6 +464,36 @@ components:
       enum:
         - ATIVA
         - ENCERRADA
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - environment
+        - uptimeInSeconds
+        - timestamp
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: multiplan-flash-api
+        version:
+          type: string
+          example: '1'
+        environment:
+          type: string
+          example: production
+        uptimeInSeconds:
+          type: integer
+          example: 42
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-04-12T04:30:00.000Z'
 
     RegisterRequest:
       type: object
