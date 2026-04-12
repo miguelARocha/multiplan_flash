@@ -25,6 +25,7 @@ export class OffersService {
       data: {
         title: createOfferDto.title.trim(),
         description: createOfferDto.description.trim(),
+        priceInCents: createOfferDto.priceInCents,
         discountPercentage: createOfferDto.discountPercentage,
         stock: createOfferDto.stock,
         expiresAt: new Date(createOfferDto.expiresAt),
@@ -186,6 +187,9 @@ export class OffersService {
         : {}),
       ...(updateOfferDto.description !== undefined
         ? { description: updateOfferDto.description.trim() }
+        : {}),
+      ...(updateOfferDto.priceInCents !== undefined
+        ? { priceInCents: updateOfferDto.priceInCents }
         : {}),
       ...(updateOfferDto.discountPercentage !== undefined
         ? { discountPercentage: updateOfferDto.discountPercentage }

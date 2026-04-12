@@ -34,6 +34,7 @@ model Offer {
   id                 String      @id @default(uuid())
   title              String
   description        String
+  priceInCents       Int
   discountPercentage Int
   stock              Int
   expiresAt          DateTime

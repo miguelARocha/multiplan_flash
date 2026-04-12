@@ -6,11 +6,17 @@ export type Offer = {
   id: string;
   title: string;
   description: string;
+  priceInCents: number;
   discountPercentage: number;
   stock: number;
   expiresAt: string;
   status: OfferStatus;
   shopkeeperId: string;
+  shopkeeper?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   createdAt: string;
   updatedAt: string;
 };
@@ -22,6 +28,7 @@ export type ShopkeeperOffer = Offer & {
 export type CreateOfferPayload = {
   title: string;
   description: string;
+  priceInCents: number;
   discountPercentage: number;
   stock: number;
   expiresAt: string;
@@ -33,6 +40,31 @@ export type UpdateOfferPayload = Partial<CreateOfferPayload> & {
 
 export function listActiveOffers() {
   return apiRequest<Offer[]>('/offers?status=ATIVA');
+}
+
+export type Interest = {
+  id: string;
+  buyerId: string;
+  offerId: string;
+  createdAt: string;
+  buyer: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  offer: {
+    id: string;
+    shopkeeperId: string;
+    title: string;
+    stock: number;
+  };
+};
+
+export function createInterest(offerId: string, token: string) {
+  return apiRequest<Interest>(`/offers/${offerId}/interests`, {
+    method: 'POST',
+    token,
+  });
 }
 
 export function listMyOffers(token: string) {

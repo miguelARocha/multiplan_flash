@@ -22,6 +22,12 @@ export class OfferResponseDto {
   @ApiProperty()
   description: string;
 
+  @ApiProperty({
+    description: 'Valor do produto em centavos.',
+    example: 12990,
+  })
+  priceInCents: number;
+
   @ApiProperty()
   discountPercentage: number;
 

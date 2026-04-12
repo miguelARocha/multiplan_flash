@@ -170,6 +170,7 @@ paths:
             example:
               title: Tenis com 40% OFF
               description: Oferta valida enquanto durar o estoque.
+              priceInCents: 12990
               discountPercentage: 40
               stock: 25
               expiresAt: '2026-04-12T23:59:59.000Z'
@@ -228,6 +229,7 @@ paths:
             example:
               title: Tenis com 50% OFF
               description: Ultimas unidades da campanha.
+              priceInCents: 14990
               discountPercentage: 50
               stock: 10
               expiresAt: '2026-04-13T23:59:59.000Z'
@@ -489,6 +491,7 @@ components:
       required:
         - title
         - description
+        - priceInCents
         - discountPercentage
         - stock
         - expiresAt
@@ -499,6 +502,11 @@ components:
         description:
           type: string
           example: Oferta valida enquanto durar o estoque.
+        priceInCents:
+          type: integer
+          minimum: 1
+          description: Valor do produto em centavos.
+          example: 12990
         discountPercentage:
           type: integer
           minimum: 1
@@ -523,6 +531,11 @@ components:
         description:
           type: string
           example: Ultimas unidades da campanha.
+        priceInCents:
+          type: integer
+          minimum: 1
+          description: Valor do produto em centavos.
+          example: 14990
         discountPercentage:
           type: integer
           minimum: 1
@@ -561,6 +574,7 @@ components:
         - id
         - title
         - description
+        - priceInCents
         - discountPercentage
         - stock
         - expiresAt
@@ -579,6 +593,10 @@ components:
         description:
           type: string
           example: Oferta valida enquanto durar o estoque.
+        priceInCents:
+          type: integer
+          description: Valor do produto em centavos.
+          example: 12990
         discountPercentage:
           type: integer
           example: 40

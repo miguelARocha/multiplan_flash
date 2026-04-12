@@ -29,6 +29,7 @@ type InterestNotification = {
 type OfferFormState = {
   title: string;
   description: string;
+  price: string;
   discountPercentage: string;
   stock: string;
   expiresAt: string;
@@ -45,6 +46,7 @@ const productImages = [
 const emptyForm: OfferFormState = {
   title: "",
   description: "",
+  price: "",
   discountPercentage: "",
   stock: "",
   expiresAt: "",
@@ -65,6 +67,21 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function formatCurrencyFromCents(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value / 100);
+}
+
+function parseCurrencyToCents(value: string) {
+  const normalizedValue = value.includes(",")
+    ? value.replace(/\./g, "").replace(",", ".")
+    : value;
+
+  return Math.round(Number(normalizedValue) * 100);
 }
 
 function getOfferImage(index: number) {
@@ -203,6 +220,7 @@ export function ShopkeeperDashboard() {
     setForm({
       title: offer.title,
       description: offer.description,
+      price: String(offer.priceInCents / 100).replace(".", ","),
       discountPercentage: String(offer.discountPercentage),
       stock: String(offer.stock),
       expiresAt: toDateTimeLocal(offer.expiresAt),
@@ -224,6 +242,7 @@ export function ShopkeeperDashboard() {
     const payload: CreateOfferPayload = {
       title: form.title,
       description: form.description,
+      priceInCents: parseCurrencyToCents(form.price),
       discountPercentage: Number(form.discountPercentage),
       stock: Number(form.stock),
       expiresAt: new Date(form.expiresAt).toISOString(),
@@ -509,6 +528,21 @@ export function ShopkeeperDashboard() {
               />
             </label>
             <label>
+              <span>Valor:</span>
+              <input
+                required
+                inputMode="decimal"
+                value={form.price}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    price: event.target.value,
+                  }))
+                }
+                placeholder="Ex: 129,90"
+              />
+            </label>
+            <label>
               <span>Desconto:</span>
               <input
                 required
@@ -594,6 +628,7 @@ export function ShopkeeperDashboard() {
                   <thead>
                     <tr>
                       <th>Oferta</th>
+                      <th>Valor</th>
                       <th>Desconto</th>
                       <th>Estoque</th>
                       <th>Validade</th>
@@ -613,6 +648,9 @@ export function ShopkeeperDashboard() {
                               <small>ID: {offer.id.slice(0, 8)}</small>
                             </div>
                           </div>
+                        </td>
+                        <td>
+                          {formatCurrencyFromCents(offer.priceInCents)}
                         </td>
                         <td>
                           <span className="discount-pill">
@@ -703,6 +741,9 @@ export function ShopkeeperDashboard() {
                         interessados
                       </p>
                       <div className="mobile-card-footer">
+                        <span className="mobile-card-price">
+                          {formatCurrencyFromCents(offer.priceInCents)}
+                        </span>
                         <strong>{offer.discountPercentage}% OFF</strong>
                         <small>
                           {offer.status === "ATIVA" ? "Ativa" : "Encerrada"}

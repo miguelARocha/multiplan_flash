@@ -52,6 +52,7 @@ describe('OffersService', () => {
     await offersService.create(shopkeeperUser, {
       title: 'Oferta nova',
       description: 'Descricao da oferta',
+      priceInCents: 12990,
       discountPercentage: 30,
       stock: 15,
       expiresAt: '2026-04-20T10:00:00.000Z',
@@ -62,6 +63,7 @@ describe('OffersService', () => {
         data: expect.objectContaining({
           shopkeeperId: 'shopkeeper-1',
           title: 'Oferta nova',
+          priceInCents: 12990,
           discountPercentage: 30,
         }),
       }),
@@ -76,6 +78,7 @@ describe('OffersService', () => {
       offersService.create(buyerUser, {
         title: 'Oferta invalida',
         description: 'Nao deveria criar',
+        priceInCents: 9990,
         discountPercentage: 20,
         stock: 10,
         expiresAt: '2026-04-20T10:00:00.000Z',
@@ -94,6 +97,7 @@ describe('OffersService', () => {
 
     await offersService.update(shopkeeperUser, 'offer-1', {
       title: 'Oferta atualizada',
+      priceInCents: 14990,
       stock: 8,
     });
 
@@ -102,6 +106,7 @@ describe('OffersService', () => {
         where: { id: 'offer-1' },
         data: expect.objectContaining({
           title: 'Oferta atualizada',
+          priceInCents: 14990,
           stock: 8,
         }),
       }),

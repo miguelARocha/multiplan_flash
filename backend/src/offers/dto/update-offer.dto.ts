@@ -21,6 +21,16 @@ export class UpdateOfferDto {
   @IsString()
   description?: string;
 
+  @ApiPropertyOptional({
+    description: 'Valor do produto em centavos.',
+    example: 14990,
+    minimum: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  priceInCents?: number;
+
   @ApiPropertyOptional({ example: 50, minimum: 1, maximum: 100 })
   @IsOptional()
   @IsInt()

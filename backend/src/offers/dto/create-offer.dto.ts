@@ -19,6 +19,15 @@ export class CreateOfferDto {
   @IsNotEmpty()
   description: string;
 
+  @ApiProperty({
+    description: 'Valor do produto em centavos.',
+    example: 12990,
+    minimum: 1,
+  })
+  @IsInt()
+  @Min(1)
+  priceInCents: number;
+
   @ApiProperty({ example: 40, minimum: 1, maximum: 100 })
   @IsInt()
   @Min(1)
