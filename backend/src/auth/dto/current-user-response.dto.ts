@@ -4,11 +4,20 @@ import type { AuthUserRole } from '../auth.types';
 
 export class CurrentUserResponseDto {
   @ApiProperty()
-  sub: string;
+  id: string;
+
+  @ApiProperty()
+  name: string;
 
   @ApiProperty()
   email: string;
 
   @ApiProperty({ enum: UserRole })
   role: AuthUserRole;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
 }

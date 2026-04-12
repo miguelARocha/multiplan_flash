@@ -52,6 +52,6 @@ export class AuthController {
   })
   @ApiOkResponse({ type: CurrentUserResponseDto })
   me(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+    return this.authService.getCurrentUser(user.sub);
   }
 }

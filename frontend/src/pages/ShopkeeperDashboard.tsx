@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Socket } from "socket.io-client";
+import { getCurrentUser } from "../api/auth";
+import type { AuthUser } from "../api/types";
 import {
   closeOffer,
   createOffer,
@@ -81,6 +83,7 @@ function getStockPercent(offer: ShopkeeperOffer) {
 
 export function ShopkeeperDashboard() {
   const { logout, token, user } = useAuth();
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(user);
   const [offers, setOffers] = useState<ShopkeeperOffer[]>([]);
   const [notifications, setNotifications] = useState<InterestNotification[]>(
     [],
@@ -95,6 +98,20 @@ export function ShopkeeperDashboard() {
     useState<ShopkeeperOffer | null>(null);
   const [form, setForm] = useState<OfferFormState>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(user);
+  }, [user]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+
+    getCurrentUser(token)
+      .then(setCurrentUser)
+      .catch(() => undefined);
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -367,7 +384,7 @@ export function ShopkeeperDashboard() {
         <header className="merchant-topbar">
           <div>
             <p className="eyebrow">Dashboard do lojista</p>
-            <h1>Olá, {user?.name}</h1>
+            <h1>Olá, {currentUser?.name ?? user?.name ?? "lojista"}</h1>
           </div>
 
           <div className="merchant-actions">
